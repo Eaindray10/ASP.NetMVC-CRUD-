@@ -78,6 +78,22 @@ namespace CRUD_MVC_.Controllers
             }
         }
 
+        public ActionResult Delete(int id)
+        {
+            try
+            {
+                var emp = empList.Single(e => e.emp_id == id);
+                empList.Remove(emp);
+                if (TryUpdateModel(empList))
+                    return RedirectToAction("Emp_View");
+                return View();
+            }
+            catch
+            {
+                return View();
+            }
+        }
+
         public List<Employee> getEmpList()
         {
             return empList;
