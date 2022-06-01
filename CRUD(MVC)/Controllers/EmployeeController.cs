@@ -23,6 +23,13 @@ namespace CRUD_MVC_.Controllers
             return View(emps);
         }
 
+        public ActionResult Details(int id)
+        {
+            List<Employee> emps = getEmpList();
+            var emp = emps.Single(e => e.emp_id == id);
+            return View(emp);
+        }
+
         public ActionResult Create()
         {
             return View();
