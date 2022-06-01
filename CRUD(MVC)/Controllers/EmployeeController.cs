@@ -1,6 +1,8 @@
 ﻿using CRUD_MVC_.Models;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -9,17 +11,14 @@ namespace CRUD_MVC_.Controllers
 {
     public class EmployeeController : Controller
     {
-        public static List<Employee> empList = new List<Employee>
-        {
-             new Employee{emp_id=1,emp_name="Eaindray",age=23},
-                new Employee{emp_id=2,emp_name="Htet",age=24},
-                 new Employee{emp_id=3,emp_name="Eaindray",age=23},
-                new Employee{emp_id=4,emp_name="Htet",age=24}
-        };
+        string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
+       
+
+        public List<Employee> empList = new List<Employee>();
         // GET: Employee
         public ActionResult Emp_View()
         {
-            var emps = from e in empList orderby e.emp_id select e;
+            var emps = from e in getEmpList() orderby e.emp_id select e;
             return View(emps);
         }
 
@@ -46,7 +45,17 @@ namespace CRUD_MVC_.Controllers
                 emp.emp_name = collection["emp_name"];
                 string age = collection["age"];
                 emp.age = Int32.Parse(age);
-                empList.Add(emp);
+                MySqlConnection con = new MySqlConnection(constr);
+                con.Open();
+                string insert_query = "insert into employee(emp_id,emp_name,age) " +
+                    "values(" + Int32.Parse(id)+", '" +
+                    collection["emp_name"] + "', " +
+                    Int32.Parse(age)+
+                    ");";
+                MySqlCommand cmd = new MySqlCommand(insert_query, con);
+                cmd.ExecuteNonQuery();
+                con.Close();
+                //empList.Add(emp);
                 return RedirectToAction("Emp_View");
             }
             catch
@@ -67,10 +76,15 @@ namespace CRUD_MVC_.Controllers
         {
             try
             {
-                var emp = empList.Single(e => e.emp_id == id);
-                if (TryUpdateModel(emp))
-                    return RedirectToAction("Emp_View");
-                return View(emp);
+                MySqlConnection con = new MySqlConnection(constr);
+                con.Open();
+                string update_query = "update employee set " +
+                    "emp_name='" + collection["emp_name"] + "'," +
+                    "age=" + Convert.ToInt32(collection["age"]) + " where emp_id="+id+";";
+                MySqlCommand cmd = new MySqlCommand(update_query, con);
+                cmd.ExecuteNonQuery();
+                con.Close();
+                return RedirectToAction("Emp_View");
             }
             catch
             {
@@ -82,11 +96,17 @@ namespace CRUD_MVC_.Controllers
         {
             try
             {
-                var emp = empList.Single(e => e.emp_id == id);
-                empList.Remove(emp);
-                if (TryUpdateModel(empList))
-                    return RedirectToAction("Emp_View");
-                return View();
+                MySqlConnection con = new MySqlConnection(constr);
+                con.Open();
+                string delete_query = "delete from employee where emp_id=" + id + ";";
+                MySqlCommand cmd = new MySqlCommand(delete_query, con);
+                cmd.ExecuteNonQuery();
+                con.Close();
+                //var emp = empList.Single(e => e.emp_id == id);
+                //empList.Remove(emp);
+                //if (TryUpdateModel(empList))
+                //    return RedirectToAction("Emp_View");
+                return RedirectToAction("Emp_View");
             }
             catch
             {
@@ -96,6 +116,18 @@ namespace CRUD_MVC_.Controllers
 
         public List<Employee> getEmpList()
         {
+            MySqlConnection con = new MySqlConnection(constr);
+            con.Open();
+            string select_query = "select emp_id,emp_name,age from employee;";
+            MySqlCommand cmd = new MySqlCommand(select_query, con);
+            MySqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                empList.Add(
+                    new Employee { emp_id = Convert.ToInt32(reader.GetValue(0).ToString()), emp_name = reader.GetValue(1).ToString(), age = Convert.ToInt32(reader.GetValue(2).ToString()) }
+                    );
+            }
+            con.Close();
             return empList;
         }
     }
